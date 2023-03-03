@@ -230,6 +230,14 @@ typedef NS_ENUM(NSInteger, ImagePickerClassType) { UIImagePickerClassType, PHPic
   ];
   imagePickerController.videoQuality = UIImagePickerControllerQualityTypeHigh;
 
+  // Waiting on PR or issue to be fixed:
+  // https://github.com/flutter/plugins/pull/3457
+  // https://github.com/flutter/flutter/issues/24954
+  if (@available(iOS 11.0, *)) {
+    // Enable passthrough mode in video-picking mode.
+    _imagePickerController.videoExportPreset = AVAssetExportPresetPassthrough;
+  }
+
   if (maxDurationSeconds) {
     NSTimeInterval max = [maxDurationSeconds doubleValue];
     imagePickerController.videoMaximumDuration = max;
