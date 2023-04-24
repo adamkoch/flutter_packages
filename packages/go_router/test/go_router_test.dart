@@ -21,14 +21,14 @@ import 'test_helpers.dart';
 const bool enableLogs = false;
 final Logger log = Logger('GoRouter tests');
 
-Future<void> sendPlatformUrl(String url) async {
+Future<void> sendPlatformUrl(String url, WidgetTester tester) async {
   final Map<String, dynamic> testRouteInformation = <String, dynamic>{
     'location': url,
   };
   final ByteData message = const JSONMethodCodec().encodeMethodCall(
     MethodCall('pushRouteInformation', testRouteInformation),
   );
-  await ServicesBinding.instance.defaultBinaryMessenger
+  await tester.binding.defaultBinaryMessenger
       .handlePlatformMessage('flutter/navigation', message, (_) {});
 }
 
@@ -281,6 +281,57 @@ void main() {
       router.go('/1234?id=456');
       await tester.pumpAndSettle();
       expect(find.text('/1234?id=456'), findsOneWidget);
+    });
+
+    testWidgets('repeatedly pops imperative route does not crash',
+        (WidgetTester tester) async {
+      // Regression test for https://github.com/flutter/flutter/issues/123369.
+      final UniqueKey home = UniqueKey();
+      final UniqueKey settings = UniqueKey();
+      final UniqueKey dialog = UniqueKey();
+      final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
+      final List<GoRoute> routes = <GoRoute>[
+        GoRoute(
+          path: '/',
+          builder: (_, __) => DummyScreen(key: home),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (_, __) => DummyScreen(key: settings),
+        ),
+      ];
+      final GoRouter router =
+          await createRouter(routes, tester, navigatorKey: navKey);
+      expect(find.byKey(home), findsOneWidget);
+
+      router.push('/settings');
+      await tester.pumpAndSettle();
+      expect(find.byKey(home), findsNothing);
+      expect(find.byKey(settings), findsOneWidget);
+
+      showDialog(
+        context: navKey.currentContext!,
+        builder: (_) => DummyScreen(key: dialog),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(dialog), findsOneWidget);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(dialog), findsNothing);
+      expect(find.byKey(settings), findsOneWidget);
+
+      showDialog(
+        context: navKey.currentContext!,
+        builder: (_) => DummyScreen(key: dialog),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(dialog), findsOneWidget);
+
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(dialog), findsNothing);
+      expect(find.byKey(settings), findsOneWidget);
     });
 
     testWidgets('match sub-route', (WidgetTester tester) async {
@@ -793,6 +844,42 @@ void main() {
     });
   });
 
+  testWidgets('does not crash when inherited widget changes',
+      (WidgetTester tester) async {
+    final ValueNotifier<String> notifier = ValueNotifier<String>('initial');
+    final List<GoRoute> routes = <GoRoute>[
+      GoRoute(
+          path: '/',
+          pageBuilder: (BuildContext context, GoRouterState state) {
+            final String value = context
+                .dependOnInheritedWidgetOfExactType<TestInheritedNotifier>()!
+                .notifier!
+                .value;
+            return MaterialPage<void>(
+              key: state.pageKey,
+              child: Text(value),
+            );
+          }),
+    ];
+    final GoRouter router = GoRouter(
+      routes: routes,
+    );
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        builder: (BuildContext context, Widget? child) {
+          return TestInheritedNotifier(notifier: notifier, child: child!);
+        },
+      ),
+    );
+
+    expect(find.text(notifier.value), findsOneWidget);
+
+    notifier.value = 'updated';
+    await tester.pump();
+    expect(find.text(notifier.value), findsOneWidget);
+  });
+
   testWidgets(
       'Handles the Android back button when a second Shell has a GoRoute with parentNavigator key',
       (WidgetTester tester) async {
@@ -921,11 +1008,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/settings',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/settings', false, null),
       ]);
     });
 
@@ -950,11 +1033,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/', false, null),
       ]);
     });
 
@@ -985,11 +1064,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/', false, null),
       ]);
     });
 
@@ -1014,11 +1089,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/', false, null),
       ]);
     });
 
@@ -1044,11 +1115,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/', false, null),
       ]);
     });
 
@@ -1104,11 +1171,7 @@ void main() {
       expect(find.text('Screen C'), findsOneWidget);
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/b/c',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/b/c', false, null),
       ]);
 
       log.clear();
@@ -1118,11 +1181,7 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/', false, null),
       ]);
     });
 
@@ -1156,11 +1215,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(log, <Object>[
         isMethodCall('selectMultiEntryHistory', arguments: null),
-        isMethodCall('routeInformationUpdated', arguments: <String, dynamic>{
-          'location': '/login',
-          'state': null,
-          'replace': false
-        }),
+        const IsRouteUpdateCall('/login', false, null),
       ]);
     });
   });
@@ -1495,7 +1550,7 @@ void main() {
 
       redirected = false;
       // Directly set the url through platform message.
-      await sendPlatformUrl('/dummy');
+      await sendPlatformUrl('/dummy', tester);
 
       await tester.pumpAndSettle();
       expect(router.location, '/login');
@@ -1528,7 +1583,7 @@ void main() {
 
       expect(router.location, '/');
       // Directly set the url through platform message.
-      await sendPlatformUrl('/dummy');
+      await sendPlatformUrl('/dummy', tester);
       await tester.pumpAndSettle();
       expect(router.location, '/dummy');
     });
@@ -1631,7 +1686,7 @@ void main() {
       });
       redirected = false;
       // Directly set the url through platform message.
-      await sendPlatformUrl('/dummy');
+      await sendPlatformUrl('/dummy', tester);
 
       await tester.pumpAndSettle();
       expect(router.location, '/login');
@@ -2024,7 +2079,7 @@ void main() {
       final GoRouter router = await createRouter(routes, tester);
 
       // Directly set the url through platform message.
-      await sendPlatformUrl('/dummy/dummy2');
+      await sendPlatformUrl('/dummy/dummy2', tester);
 
       await tester.pumpAndSettle();
       expect(router.location, '/other');
@@ -2054,6 +2109,33 @@ void main() {
         initialLocation: '/dummy',
       );
       expect(router.location, '/dummy');
+    });
+
+    testWidgets('initial location with extra', (WidgetTester tester) async {
+      final List<GoRoute> routes = <GoRoute>[
+        GoRoute(
+          path: '/',
+          builder: (BuildContext context, GoRouterState state) =>
+              const HomeScreen(),
+          routes: <GoRoute>[
+            GoRoute(
+              path: 'dummy',
+              builder: (BuildContext context, GoRouterState state) {
+                return DummyScreen(key: ValueKey<Object?>(state.extra));
+              },
+            ),
+          ],
+        ),
+      ];
+
+      final GoRouter router = await createRouter(
+        routes,
+        tester,
+        initialLocation: '/dummy',
+        initialExtra: 'extra',
+      );
+      expect(router.location, '/dummy');
+      expect(find.byKey(const ValueKey<Object?>('extra')), findsOneWidget);
     });
 
     testWidgets('initial location w/ redirection', (WidgetTester tester) async {
@@ -2103,9 +2185,28 @@ void main() {
         routes,
         tester,
       );
+      // TODO(chunhtai): remove this ignore and migrate the code
+      // https://github.com/flutter/flutter/issues/124045.
+      // ignore: deprecated_member_use
       expect(router.routeInformationProvider.value.location, '/dummy');
       TestWidgetsFlutterBinding
           .instance.platformDispatcher.defaultRouteNameTestValue = '/';
+    });
+
+    test('throws assertion if initialExtra is set w/o initialLocation', () {
+      expect(
+        () => GoRouter(
+          routes: const <GoRoute>[],
+          initialExtra: 1,
+        ),
+        throwsA(
+          isA<AssertionError>().having(
+            (AssertionError e) => e.message,
+            'error message',
+            'initialLocation must be set in order to use initialExtra',
+          ),
+        ),
+      );
     });
   });
 
@@ -2396,8 +2497,8 @@ void main() {
       expect(router.location, loc);
       expect(matches.matches, hasLength(2));
       expect(find.byType(PersonScreen), findsOneWidget);
-      final ImperativeRouteMatch imperativeRouteMatch =
-          matches.matches.last as ImperativeRouteMatch;
+      final ImperativeRouteMatch<Object?> imperativeRouteMatch =
+          matches.matches.last as ImperativeRouteMatch<Object?>;
       expect(imperativeRouteMatch.matches.pathParameters['fid'], fid);
       expect(imperativeRouteMatch.matches.pathParameters['pid'], pid);
     });
@@ -2655,6 +2756,26 @@ void main() {
       expect(router.extra, extra);
     });
 
+    testWidgets('calls [push] on closest GoRouter and waits for result',
+        (WidgetTester tester) async {
+      final GoRouterPushSpy router = GoRouterPushSpy(routes: routes);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routeInformationProvider: router.routeInformationProvider,
+          routeInformationParser: router.routeInformationParser,
+          routerDelegate: router.routerDelegate,
+          title: 'GoRouter Example',
+        ),
+      );
+      final String? result = await router.push<String>(
+        location,
+        extra: extra,
+      );
+      expect(result, extra);
+      expect(router.myLocation, location);
+      expect(router.extra, extra);
+    });
+
     testWidgets('calls [pushNamed] on closest GoRouter',
         (WidgetTester tester) async {
       final GoRouterPushNamedSpy router = GoRouterPushNamedSpy(routes: routes);
@@ -2674,6 +2795,30 @@ void main() {
       expect(router.params, params);
       expect(router.queryParams, queryParams);
       expect(router.extra, extra);
+    });
+
+    testWidgets('calls [pushNamed] on closest GoRouter and waits for result',
+        (WidgetTester tester) async {
+      final GoRouterPushNamedSpy router = GoRouterPushNamedSpy(routes: routes);
+      await tester.pumpWidget(
+        MaterialApp.router(
+          routeInformationProvider: router.routeInformationProvider,
+          routeInformationParser: router.routeInformationParser,
+          routerDelegate: router.routerDelegate,
+          title: 'GoRouter Example',
+        ),
+      );
+      final String? result = await router.pushNamed<String>(
+        name,
+        params: params,
+        queryParams: queryParams,
+        extra: extra,
+      );
+      expect(result, extra);
+      expect(router.extra, extra);
+      expect(router.name, name);
+      expect(router.params, params);
+      expect(router.queryParams, queryParams);
     });
 
     testWidgets('calls [pop] on closest GoRouter', (WidgetTester tester) async {
@@ -3337,6 +3482,56 @@ void main() {
       },
     );
   });
+}
+
+class TestInheritedNotifier extends InheritedNotifier<ValueNotifier<String>> {
+  const TestInheritedNotifier({
+    super.key,
+    required super.notifier,
+    required super.child,
+  });
+}
+
+class IsRouteUpdateCall extends Matcher {
+  const IsRouteUpdateCall(this.uri, this.replace, this.state);
+
+  final String uri;
+  final bool replace;
+  final Object? state;
+
+  @override
+  bool matches(dynamic item, Map<dynamic, dynamic> matchState) {
+    if (item is! MethodCall) {
+      return false;
+    }
+    if (item.method != 'routeInformationUpdated') {
+      return false;
+    }
+    if (item.arguments is! Map) {
+      return false;
+    }
+    final Map<String, dynamic> arguments =
+        item.arguments as Map<String, dynamic>;
+    // TODO(chunhtai): update this when minimum flutter version includes
+    // https://github.com/flutter/flutter/pull/119968.
+    // https://github.com/flutter/flutter/issues/124045.
+    if (arguments['uri'] != uri && arguments['location'] != uri) {
+      return false;
+    }
+    return arguments['state'] == state && arguments['replace'] == replace;
+  }
+
+  @override
+  Description describe(Description description) {
+    return description
+        .add("has method name: 'routeInformationUpdated'")
+        .add(' with uri: ')
+        .addDescriptionOf(uri)
+        .add(' with state: ')
+        .addDescriptionOf(state)
+        .add(' with replace: ')
+        .addDescriptionOf(replace);
+  }
 }
 
 /// This allows a value of type T or T? to be treated as a value of type T?.

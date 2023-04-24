@@ -33,7 +33,8 @@ public class CookieManagerHostApiImplTest {
     when(cookieManager.hasCookies()).thenReturn(true);
     doAnswer(
             answer -> {
-              ((ValueCallback<Boolean>) answer.getArgument(0)).onReceiveValue(true);
+              ValueCallback<Boolean> callback = answer.getArgument(0);
+              (callback).onReceiveValue(true);
               return null;
             })
         .when(cookieManager)
@@ -59,6 +60,7 @@ public class CookieManagerHostApiImplTest {
   public void clearCookiesShouldCallRemoveAllCookiesOnAndroidLAbove() {
     // Setup
     TestUtils.setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.LOLLIPOP);
+    @SuppressWarnings("unchecked")
     GeneratedAndroidWebView.Result<Boolean> result = mock(GeneratedAndroidWebView.Result.class);
     CookieManagerHostApiImpl impl = new CookieManagerHostApiImpl();
     // Run
@@ -69,9 +71,11 @@ public class CookieManagerHostApiImplTest {
   }
 
   @Test
+  @SuppressWarnings("deprecation")
   public void clearCookiesShouldCallRemoveAllCookieBelowAndroidL() {
     // Setup
     TestUtils.setFinalStatic(Build.VERSION.class, "SDK_INT", Build.VERSION_CODES.KITKAT_WATCH);
+    @SuppressWarnings("unchecked")
     GeneratedAndroidWebView.Result<Boolean> result = mock(GeneratedAndroidWebView.Result.class);
     CookieManagerHostApiImpl impl = new CookieManagerHostApiImpl();
     // Run

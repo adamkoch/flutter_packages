@@ -1,3 +1,8 @@
+## 2.0.10
+
+* Sets an explicit Java compatibility version.
+* Aligns Dart and Flutter SDK constraints.
+
 ## 2.0.9
 
 * Updates annotation and espresso dependencies.

@@ -1,3 +1,17 @@
+## 0.9.0+8
+
+* Updates pigeon for null value handling fixes.
+* Updates minimum Flutter version to 3.3.
+
+## 0.9.0+7
+
+* Updates to `pigeon` version 9.
+
+## 0.9.0+6
+
+* Clarifies explanation of endorsement in README.
+* Aligns Dart and Flutter SDK constraints.
+
 ## 0.9.0+5
 
 * Updates links for the merge of flutter/plugins into flutter/packages.

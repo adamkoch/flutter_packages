@@ -1209,8 +1209,7 @@ Future<String> _getUserAgent(WebViewController controller) async {
 
 class ResizableWebView extends StatefulWidget {
   const ResizableWebView(
-      {Key? key, required this.onResize, required this.onPageFinished})
-      : super(key: key);
+      {super.key, required this.onResize, required this.onPageFinished});
 
   final JavascriptMessageHandler onResize;
   final VoidCallback onPageFinished;
@@ -1294,7 +1293,7 @@ class CopyableObjectWithCallback with Copyable {
 class ClassWithCallbackClass {
   ClassWithCallbackClass() {
     callbackClass = CopyableObjectWithCallback(
-      withWeakRefenceTo(
+      withWeakReferenceTo(
         this,
         (WeakReference<ClassWithCallbackClass> weakReference) {
           return () {

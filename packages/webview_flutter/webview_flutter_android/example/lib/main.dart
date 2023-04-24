@@ -74,7 +74,7 @@ const String kTransparentBackgroundPage = '''
 ''';
 
 class WebViewExample extends StatefulWidget {
-  const WebViewExample({Key? key, this.cookieManager}) : super(key: key);
+  const WebViewExample({super.key, this.cookieManager});
 
   final PlatformWebViewCookieManager? cookieManager;
 
@@ -123,6 +123,9 @@ Page resource error:
             }
             debugPrint('allowing navigation to ${request.url}');
             return NavigationDecision.navigate;
+          })
+          ..setOnUrlChange((UrlChange change) {
+            debugPrint('url change to ${change.url}');
           }),
       )
       ..addJavaScriptChannel(JavaScriptChannelParams(
@@ -133,6 +136,14 @@ Page resource error:
           );
         },
       ))
+      ..setOnPlatformPermissionRequest(
+        (PlatformWebViewPermissionRequest request) {
+          debugPrint(
+            'requesting permissions for ${request.types.map((WebViewPermissionResourceType type) => type.name)}',
+          );
+          request.grant();
+        },
+      )
       ..loadRequest(LoadRequestParams(
         uri: Uri.parse('https://flutter.dev'),
       ));
@@ -193,14 +204,13 @@ enum MenuOptions {
 
 class SampleMenu extends StatelessWidget {
   SampleMenu({
-    Key? key,
+    super.key,
     required this.webViewController,
     PlatformWebViewCookieManager? cookieManager,
-  })  : cookieManager = cookieManager ??
+  }) : cookieManager = cookieManager ??
             PlatformWebViewCookieManager(
               const PlatformWebViewCookieManagerCreationParams(),
-            ),
-        super(key: key);
+            );
 
   final PlatformWebViewController webViewController;
   late final PlatformWebViewCookieManager cookieManager;
@@ -457,8 +467,7 @@ class SampleMenu extends StatelessWidget {
 }
 
 class NavigationControls extends StatelessWidget {
-  const NavigationControls({Key? key, required this.webViewController})
-      : super(key: key);
+  const NavigationControls({super.key, required this.webViewController});
 
   final PlatformWebViewController webViewController;
 

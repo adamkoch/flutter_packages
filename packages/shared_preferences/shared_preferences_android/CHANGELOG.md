@@ -1,5 +1,20 @@
-## NEXT
+## 2.1.2
 
+* Sets the required Java compile version to 1.8 for new features used in 2.1.1.
+
+## 2.1.1
+
+* Updates minimum Flutter version to 3.0.
+* Converts implementation to Pigeon.
+
+## 2.1.0
+
+* Adds `getAllWithPrefix` and `clearWithPrefix` methods.
+
+## 2.0.17
+
+* Clarifies explanation of endorsement in README.
+* Aligns Dart and Flutter SDK constraints.
 * Updates compileSdkVersion to 33.
 
 ## 2.0.16

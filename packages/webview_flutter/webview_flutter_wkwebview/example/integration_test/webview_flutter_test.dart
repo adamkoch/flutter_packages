@@ -1002,6 +1002,81 @@ Future<void> main() async {
       final String? currentUrl = await controller.currentUrl();
       expect(currentUrl, secondaryUrl);
     });
+
+    testWidgets('can receive url changes', (WidgetTester tester) async {
+      final Completer<void> pageLoaded = Completer<void>();
+
+      final PlatformNavigationDelegate navigationDelegate =
+          PlatformNavigationDelegate(
+        const PlatformNavigationDelegateCreationParams(),
+      )..setOnPageFinished((_) => pageLoaded.complete());
+
+      final PlatformWebViewController controller = PlatformWebViewController(
+        const PlatformWebViewControllerCreationParams(),
+      )
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setPlatformNavigationDelegate(navigationDelegate)
+        ..loadRequest(LoadRequestParams(uri: Uri.parse(blankPageEncoded)));
+
+      await tester.pumpWidget(Builder(
+        builder: (BuildContext context) {
+          return PlatformWebViewWidget(
+            PlatformWebViewWidgetCreationParams(controller: controller),
+          ).build(context);
+        },
+      ));
+
+      await pageLoaded.future;
+      await navigationDelegate.setOnPageFinished((_) {});
+
+      final Completer<String> urlChangeCompleter = Completer<String>();
+      await navigationDelegate.setOnUrlChange((UrlChange change) {
+        urlChangeCompleter.complete(change.url);
+      });
+
+      await controller.runJavaScript('location.href = "$primaryUrl"');
+
+      await expectLater(urlChangeCompleter.future, completion(primaryUrl));
+    });
+
+    testWidgets('can receive updates to history state',
+        (WidgetTester tester) async {
+      final Completer<void> pageLoaded = Completer<void>();
+
+      final PlatformNavigationDelegate navigationDelegate =
+          PlatformNavigationDelegate(
+        const PlatformNavigationDelegateCreationParams(),
+      )..setOnPageFinished((_) => pageLoaded.complete());
+
+      final PlatformWebViewController controller = PlatformWebViewController(
+        const PlatformWebViewControllerCreationParams(),
+      )
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setPlatformNavigationDelegate(navigationDelegate)
+        ..loadRequest(LoadRequestParams(uri: Uri.parse(primaryUrl)));
+
+      await tester.pumpWidget(Builder(
+        builder: (BuildContext context) {
+          return PlatformWebViewWidget(
+            PlatformWebViewWidgetCreationParams(controller: controller),
+          ).build(context);
+        },
+      ));
+
+      await pageLoaded.future;
+      await navigationDelegate.setOnPageFinished((_) {});
+
+      final Completer<String> urlChangeCompleter = Completer<String>();
+      await navigationDelegate.setOnUrlChange((UrlChange change) {
+        urlChangeCompleter.complete(change.url);
+      });
+
+      await controller.runJavaScript(
+        'window.history.pushState({}, "", "secondary.txt");',
+      );
+
+      await expectLater(urlChangeCompleter.future, completion(secondaryUrl));
+    });
   });
 
   testWidgets('launches with gestureNavigationEnabled on iOS',
@@ -1098,10 +1173,10 @@ Future<String> _getUserAgent(PlatformWebViewController controller) async {
 
 class ResizableWebView extends StatefulWidget {
   const ResizableWebView({
-    Key? key,
+    super.key,
     required this.onResize,
     required this.onPageFinished,
-  }) : super(key: key);
+  });
 
   final VoidCallback onResize;
   final VoidCallback onPageFinished;
@@ -1199,7 +1274,7 @@ class CopyableObjectWithCallback with Copyable {
 class ClassWithCallbackClass {
   ClassWithCallbackClass() {
     callbackClass = CopyableObjectWithCallback(
-      withWeakRefenceTo(
+      withWeakReferenceTo(
         this,
         (WeakReference<ClassWithCallbackClass> weakReference) {
           return () {

@@ -18,10 +18,11 @@ import 'package:webview_flutter_android/src/android_webview_api_impls.dart';
 import 'package:webview_flutter_android/src/instance_manager.dart';
 import 'package:webview_flutter_android/src/platform_views_service_proxy.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_platform_interface/src/webview_platform.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 import 'android_navigation_delegate_test.dart';
 import 'android_webview_controller_test.mocks.dart';
+import 'test_android_webview.g.dart';
 
 @GenerateNiceMocks(<MockSpec<Object>>[
   MockSpec<AndroidNavigationDelegate>(),
@@ -31,6 +32,7 @@ import 'android_webview_controller_test.mocks.dart';
   MockSpec<ExpensiveAndroidViewController>(),
   MockSpec<android_webview.FlutterAssetManager>(),
   MockSpec<android_webview.JavaScriptChannel>(),
+  MockSpec<android_webview.PermissionRequest>(),
   MockSpec<PlatformViewsServiceProxy>(),
   MockSpec<SurfaceAndroidViewController>(),
   MockSpec<android_webview.WebChromeClient>(),
@@ -39,9 +41,13 @@ import 'android_webview_controller_test.mocks.dart';
   MockSpec<android_webview.WebViewClient>(),
   MockSpec<android_webview.WebStorage>(),
   MockSpec<InstanceManager>(),
+  MockSpec<TestInstanceManagerHostApi>(),
 ])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Mocks the call to clear the native InstanceManager.
+  TestInstanceManagerHostApi.setup(MockTestInstanceManagerHostApi());
 
   AndroidWebViewController createControllerWithMocks({
     android_webview.FlutterAssetManager? mockFlutterAssetManager,
@@ -52,10 +58,12 @@ void main() {
       Future<List<String>> Function(
         android_webview.WebView webView,
         android_webview.FileChooserParams params,
-      )?
-          onShowFileChooser,
-    })?
-        createWebChromeClient,
+      )? onShowFileChooser,
+      void Function(
+        android_webview.WebChromeClient instance,
+        android_webview.PermissionRequest request,
+      )? onPermissionRequest,
+    })? createWebChromeClient,
     android_webview.WebView? mockWebView,
     android_webview.WebViewClient? mockWebViewClient,
     android_webview.WebStorage? mockWebStorage,
@@ -75,12 +83,14 @@ void main() {
                     Future<List<String>> Function(
                       android_webview.WebView webView,
                       android_webview.FileChooserParams params,
-                    )?
-                        onShowFileChooser,
+                    )? onShowFileChooser,
+                    void Function(
+                      android_webview.WebChromeClient instance,
+                      android_webview.PermissionRequest request,
+                    )? onPermissionRequest,
                   }) =>
                       MockWebChromeClient(),
-              createAndroidWebView: ({required bool useHybridComposition}) =>
-                  nonNullMockWebView,
+              createAndroidWebView: () => nonNullMockWebView,
               createAndroidWebViewClient: ({
                 void Function(android_webview.WebView webView, String url)?
                     onPageFinished,
@@ -92,21 +102,23 @@ void main() {
                   int errorCode,
                   String description,
                   String failingUrl,
-                )?
-                        onReceivedError,
+                )? onReceivedError,
                 void Function(
                   android_webview.WebView webView,
                   android_webview.WebResourceRequest request,
                   android_webview.WebResourceError error,
-                )?
-                    onReceivedRequestError,
+                )? onReceivedRequestError,
                 void Function(
                   android_webview.WebView webView,
                   android_webview.WebResourceRequest request,
-                )?
-                    requestLoading,
+                )? requestLoading,
                 void Function(android_webview.WebView webView, String url)?
                     urlLoading,
+                void Function(
+                  android_webview.WebView webView,
+                  String url,
+                  bool isReload,
+                )? doUpdateVisitedHistory,
               }) =>
                   mockWebViewClient ?? MockWebViewClient(),
               createFlutterAssetManager: () =>
@@ -212,7 +224,7 @@ void main() {
       )).called(1);
     });
 
-    test('loadFlutterAsset when asset does not exists', () async {
+    test('loadFlutterAsset when asset does not exist', () async {
       final MockWebView mockWebView = MockWebView();
       final MockFlutterAssetManager mockAssetManager =
           MockFlutterAssetManager();
@@ -565,8 +577,8 @@ void main() {
           Future<List<String>> Function(
             android_webview.WebView webView,
             android_webview.FileChooserParams params,
-          )?
-              onShowFileChooser,
+          )? onShowFileChooser,
+          dynamic onPermissionRequest,
         }) {
           onShowFileChooserCallback = onShowFileChooser!;
           return mockWebChromeClient;
@@ -589,7 +601,7 @@ void main() {
         android_webview.WebView.detached(),
         android_webview.FileChooserParams.detached(
           isCaptureEnabled: false,
-          acceptTypes: <String>['png'],
+          acceptTypes: const <String>['png'],
           filenameHint: 'filenameHint',
           mode: android_webview.FileChooserMode.open,
         ),
@@ -599,6 +611,96 @@ void main() {
       expect(fileSelectorParams.acceptTypes, <String>['png']);
       expect(fileSelectorParams.filenameHint, 'filenameHint');
       expect(fileSelectorParams.mode, FileSelectorMode.open);
+    });
+
+    test('setOnPlatformPermissionRequest', () async {
+      late final void Function(
+        android_webview.WebChromeClient instance,
+        android_webview.PermissionRequest request,
+      ) onPermissionRequestCallback;
+
+      final MockWebChromeClient mockWebChromeClient = MockWebChromeClient();
+      final AndroidWebViewController controller = createControllerWithMocks(
+        createWebChromeClient: ({
+          dynamic onProgressChanged,
+          dynamic onShowFileChooser,
+          void Function(
+            android_webview.WebChromeClient instance,
+            android_webview.PermissionRequest request,
+          )? onPermissionRequest,
+        }) {
+          onPermissionRequestCallback = onPermissionRequest!;
+          return mockWebChromeClient;
+        },
+      );
+
+      late final PlatformWebViewPermissionRequest permissionRequest;
+      await controller.setOnPlatformPermissionRequest(
+        (PlatformWebViewPermissionRequest request) async {
+          permissionRequest = request;
+          request.grant();
+        },
+      );
+
+      final List<String> permissionTypes = <String>[
+        android_webview.PermissionRequest.audioCapture,
+      ];
+
+      final MockPermissionRequest mockPermissionRequest =
+          MockPermissionRequest();
+      when(mockPermissionRequest.resources).thenReturn(permissionTypes);
+
+      onPermissionRequestCallback(
+        android_webview.WebChromeClient.detached(),
+        mockPermissionRequest,
+      );
+
+      expect(permissionRequest.types, <WebViewPermissionResourceType>[
+        WebViewPermissionResourceType.microphone,
+      ]);
+      verify(mockPermissionRequest.grant(permissionTypes));
+    });
+
+    test(
+        'setOnPlatformPermissionRequest callback not invoked when type is not recognized',
+        () async {
+      late final void Function(
+        android_webview.WebChromeClient instance,
+        android_webview.PermissionRequest request,
+      ) onPermissionRequestCallback;
+
+      final MockWebChromeClient mockWebChromeClient = MockWebChromeClient();
+      final AndroidWebViewController controller = createControllerWithMocks(
+        createWebChromeClient: ({
+          dynamic onProgressChanged,
+          dynamic onShowFileChooser,
+          void Function(
+            android_webview.WebChromeClient instance,
+            android_webview.PermissionRequest request,
+          )? onPermissionRequest,
+        }) {
+          onPermissionRequestCallback = onPermissionRequest!;
+          return mockWebChromeClient;
+        },
+      );
+
+      bool callbackCalled = false;
+      await controller.setOnPlatformPermissionRequest(
+        (PlatformWebViewPermissionRequest request) async {
+          callbackCalled = true;
+        },
+      );
+
+      final MockPermissionRequest mockPermissionRequest =
+          MockPermissionRequest();
+      when(mockPermissionRequest.resources).thenReturn(<String>['unknownType']);
+
+      onPermissionRequestCallback(
+        android_webview.WebChromeClient.detached(),
+        mockPermissionRequest,
+      );
+
+      expect(callbackCalled, isFalse);
     });
 
     test('runJavaScript', () async {
@@ -883,6 +985,22 @@ void main() {
     await controller.setMediaPlaybackRequiresUserGesture(true);
 
     verify(mockSettings.setMediaPlaybackRequiresUserGesture(true)).called(1);
+  });
+
+  test('setTextZoom', () async {
+    final MockWebView mockWebView = MockWebView();
+    final MockWebSettings mockSettings = MockWebSettings();
+    final AndroidWebViewController controller = createControllerWithMocks(
+      mockWebView: mockWebView,
+      mockSettings: mockSettings,
+    );
+
+    clearInteractions(mockWebView);
+
+    await controller.setTextZoom(100);
+
+    verify(mockWebView.settings).called(1);
+    verify(mockSettings.setTextZoom(100)).called(1);
   });
 
   test('webViewIdentifier', () {

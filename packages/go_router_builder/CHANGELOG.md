@@ -1,3 +1,28 @@
+## 1.2.2
+
+* Supports returning value in generated `push` method. [go_router CHANGELOG](https://github.com/flutter/packages/blob/main/packages/go_router/CHANGELOG.md#650)
+
+## 1.2.1
+
+* Supports opt-in required extra parameters. [#117261](https://github.com/flutter/flutter/issues/117261)
+
+## 1.2.0
+
+* Adds Support for ShellRoute
+
+## 1.1.7
+
+* Supports default values for `Set`, `List` and `Iterable` route parameters.
+
+## 1.1.6
+
+* Generates the const enum map for enums used in `List`, `Set` and `Iterable`.
+
+## 1.1.5
+
+* Replaces unnecessary Flutter SDK constraint with corresponding Dart
+  SDK constraint.
+
 ## 1.1.4
 
 * Fixes the example for the default values in the README.
@@ -46,7 +71,7 @@
 
 ## 1.0.10
 
-* Adds a lint ignore for deprecated member in the example. 
+* Adds a lint ignore for deprecated member in the example.
 
 ## 1.0.9
 

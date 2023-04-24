@@ -1,3 +1,13 @@
+## 2.2.2
+
+* Sets an upper bound on the `GoogleMaps` SDK version that can be used, to
+  avoid future breakage.
+
+## 2.2.1
+
+* Clarifies explanation of endorsement in README.
+* Aligns Dart and Flutter SDK constraints.
+
 ## 2.2.0
 
 * Updates minimum Flutter version to 3.3 and iOS 11.

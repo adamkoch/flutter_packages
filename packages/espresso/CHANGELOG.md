@@ -1,3 +1,17 @@
+## 0.3.0+1
+
+* Sets an explicit Java compatibility version.
+
+## 0.3.0
+
+* **BREAKING CHANGE**: Migrates uses of the deprecated `@Beta` annotation to the new `@ExperimentalApi` annotation.
+* Changes the severity of `javac` warnings so that they are treated as errors and fixes the violations.
+* Aligns Dart and Flutter SDK constraints.
+
+## 0.2.1
+
+* Updates the version of com.google.truth:truth to 1.1.3.
+
 ## 0.2.0+10
 
 * Updates espresso dependencies.

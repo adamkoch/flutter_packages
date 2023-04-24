@@ -1,6 +1,58 @@
-## NEXT
+## 3.6.0
 
+* Adds support for `PlatformWebViewController.setOnPlatformPermissionRequest`.
+
+## 3.5.3
+
+* Bumps gradle from 7.2.2 to 8.0.0.
+
+## 3.5.2
+
+* Updates internal Java InstanceManager to only stop finalization callbacks when stopped.
+
+## 3.5.1
+
+* Updates pigeon dev dependency to `9.2.4`.
+* Fixes Android lint warnings.
+
+## 3.5.0
+
+* Adds support for `PlatformNavigationDelegate.onUrlChange`.
+* Bumps androidx.webkit:webkit from 1.6.0 to 1.6.1.
+* Fixes common typos in tests and documentation.
+
+## 3.4.5
+
+* Removes unused internal `WebView` field and Java class.
+
+## 3.4.4
+
+* Fixes a bug where the native `WebView` wouldn't be traversed for autofill automatically.
+* Updates minimum Flutter version to 3.3.
+
+## 3.4.3
+
+* Updates internal Java InstanceManager to be cleared on hot restart.
+
+## 3.4.2
+
+* Clarifies explanation of endorsement in README.
+
+## 3.4.1
+
+* Fixes a potential bug where a `WebView` that was not added to the `InstanceManager` could be
+  returned by a `WebViewClient` or `WebChromeClient`.
+
+## 3.4.0
+
+* Adds support to set text zoom of a page. See `AndroidWebViewController.setTextZoom`.
+* Aligns Dart and Flutter SDK constraints.
+
+## 3.3.2
+
+* Resolves compilations warnings.
 * Updates compileSdkVersion to 33.
+* Bumps androidx.webkit:webkit from 1.5.0 to 1.6.0.
 
 ## 3.3.1
 
