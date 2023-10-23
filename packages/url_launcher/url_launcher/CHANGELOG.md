@@ -1,5 +1,22 @@
-## NEXT
+## 6.1.14
 
+* Updates documentation to mention support for Android Custom Tabs.
+
+## 6.1.13
+
+* Adds pub topics to package metadata.
+* Updates minimum supported SDK version to Flutter 3.7/Dart 2.19.
+
+## 6.1.12
+
+* Removes the use of `canLaunchUrl` in `Link`, to avoid issues on platforms where `canLaunchUrl` is unreliable or requires permissions.
+* Updates minimum supported macOS version to 10.14.
+* Fixes stale ignore: prefer_const_constructors.
+* Updates minimum supported SDK version to Flutter 3.10/Dart 3.0.
+
+## 6.1.11
+
+* Fixes some url_launcher docs that were missing the null operator (?).
 * Updates minimum Flutter version to 3.3.
 * Aligns Dart and Flutter SDK constraints.
 

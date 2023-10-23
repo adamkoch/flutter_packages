@@ -134,10 +134,11 @@
   [[self webViewForIdentifier:identifier] loadRequest:urlRequest];
 }
 
-- (void)setUserAgentForWebViewWithIdentifier:(nonnull NSNumber *)identifier
-                                   userAgent:(nullable NSString *)userAgent
-                                       error:(FlutterError *_Nullable __autoreleasing *_Nonnull)
-                                                 error {
+- (void)setCustomUserAgentForWebViewWithIdentifier:(nonnull NSNumber *)identifier
+                                         userAgent:(nullable NSString *)userAgent
+                                             error:
+                                                 (FlutterError *_Nullable __autoreleasing *_Nonnull)
+                                                     error {
   [[self webViewForIdentifier:identifier] setCustomUserAgent:userAgent];
 }
 
@@ -195,6 +196,20 @@
 
          completion(returnValue, flutterError);
        }];
+}
+
+- (void)setInspectableForWebViewWithIdentifier:(NSNumber *)identifier
+                                   inspectable:(NSNumber *)inspectable
+                                         error:(FlutterError *_Nullable *_Nonnull)error {
+  if (@available(macOS 13.3, iOS 16.4, tvOS 16.4, *)) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130300 || __IPHONE_OS_VERSION_MAX_ALLOWED >= 160400
+    [[self webViewForIdentifier:identifier] setInspectable:inspectable.boolValue];
+#endif
+  } else {
+    *error = [FlutterError errorWithCode:@"FWFUnsupportedVersionError"
+                                 message:@"setInspectable is only supported on versions 16.4+."
+                                 details:nil];
+  }
 }
 
 - (void)goBackForWebViewWithIdentifier:(nonnull NSNumber *)identifier
@@ -284,5 +299,12 @@
     titleForWebViewWithIdentifier:(nonnull NSNumber *)identifier
                             error:(FlutterError *_Nullable __autoreleasing *_Nonnull)error {
   return [[self webViewForIdentifier:identifier] title];
+}
+
+- (nullable NSString *)
+    customUserAgentForWebViewWithIdentifier:(nonnull NSNumber *)identifier
+                                      error:
+                                          (FlutterError *_Nullable __autoreleasing *_Nonnull)error {
+  return [[self webViewForIdentifier:identifier] customUserAgent];
 }
 @end
