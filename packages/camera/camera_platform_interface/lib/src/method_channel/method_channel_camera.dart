@@ -88,15 +88,29 @@ class MethodChannelCamera extends CameraPlatform {
     CameraDescription cameraDescription,
     ResolutionPreset? resolutionPreset, {
     bool enableAudio = false,
-  }) async {
+  }) async =>
+      createCameraWithSettings(
+          cameraDescription,
+          MediaSettings(
+              resolutionPreset: resolutionPreset, enableAudio: enableAudio));
+
+  @override
+  Future<int> createCameraWithSettings(
+    CameraDescription cameraDescription,
+    MediaSettings mediaSettings,
+  ) async {
     try {
+      final ResolutionPreset? resolutionPreset = mediaSettings.resolutionPreset;
       final Map<String, dynamic>? reply = await _channel
           .invokeMapMethod<String, dynamic>('create', <String, dynamic>{
         'cameraName': cameraDescription.name,
         'resolutionPreset': resolutionPreset != null
-            ? _serializeResolutionPreset(resolutionPreset)
+            ? _serializeResolutionPreset(mediaSettings.resolutionPreset!)
             : null,
-        'enableAudio': enableAudio,
+        'fps': mediaSettings.fps,
+        'videoBitrate': mediaSettings.videoBitrate,
+        'audioBitrate': mediaSettings.audioBitrate,
+        'enableAudio': mediaSettings.enableAudio,
       });
 
       return reply!['cameraId']! as int;
@@ -511,6 +525,17 @@ class MethodChannelCamera extends CameraPlatform {
       'setDescriptionWhileRecording',
       <String, dynamic>{
         'cameraName': description.name,
+      },
+    );
+  }
+
+  @override
+  Future<void> setImageFileFormat(int cameraId, ImageFileFormat format) {
+    return _channel.invokeMethod<void>(
+      'setImageFileFormat',
+      <String, dynamic>{
+        'cameraId': cameraId,
+        'fileFormat': format.name,
       },
     );
   }

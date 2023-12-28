@@ -70,8 +70,14 @@ class WebKitWebViewControllerCreationParams
       );
     }
     _configuration.setAllowsInlineMediaPlayback(allowsInlineMediaPlayback);
-    _configuration.setLimitsNavigationsToAppBoundDomains(
-        limitsNavigationsToAppBoundDomains);
+    // `WKWebViewConfiguration.limitsNavigationsToAppBoundDomains` is only
+    // supported on iOS versions 14+. So this only calls it if the value is set
+    // to true.
+    if (limitsNavigationsToAppBoundDomains) {
+      _configuration.setLimitsNavigationsToAppBoundDomains(
+        limitsNavigationsToAppBoundDomains,
+      );
+    }
   }
 
   /// Constructs a [WebKitWebViewControllerCreationParams] using a
@@ -942,6 +948,54 @@ class WebKitNavigationDelegate extends PlatformNavigationDelegate {
           );
         }
       },
+      didReceiveAuthenticationChallenge: (
+        WKWebView webView,
+        NSUrlAuthenticationChallenge challenge,
+        void Function(
+          NSUrlSessionAuthChallengeDisposition disposition,
+          NSUrlCredential? credential,
+        ) completionHandler,
+      ) {
+        if (challenge.protectionSpace.authenticationMethod ==
+            NSUrlAuthenticationMethod.httpBasic) {
+          final void Function(HttpAuthRequest)? callback =
+              weakThis.target?._onHttpAuthRequest;
+          final String? host = challenge.protectionSpace.host;
+          final String? realm = challenge.protectionSpace.realm;
+
+          if (callback != null && host != null) {
+            callback(
+              HttpAuthRequest(
+                onProceed: (WebViewCredential credential) {
+                  completionHandler(
+                    NSUrlSessionAuthChallengeDisposition.useCredential,
+                    NSUrlCredential.withUser(
+                      user: credential.user,
+                      password: credential.password,
+                      persistence: NSUrlCredentialPersistence.session,
+                    ),
+                  );
+                },
+                onCancel: () {
+                  completionHandler(
+                    NSUrlSessionAuthChallengeDisposition
+                        .cancelAuthenticationChallenge,
+                    null,
+                  );
+                },
+                host: host,
+                realm: realm,
+              ),
+            );
+            return;
+          }
+        }
+
+        completionHandler(
+          NSUrlSessionAuthChallengeDisposition.performDefaultHandling,
+          null,
+        );
+      },
     );
   }
 
@@ -954,6 +1008,7 @@ class WebKitNavigationDelegate extends PlatformNavigationDelegate {
   WebResourceErrorCallback? _onWebResourceError;
   NavigationRequestCallback? _onNavigationRequest;
   UrlChangeCallback? _onUrlChange;
+  HttpAuthRequestCallback? _onHttpAuthRequest;
 
   @override
   Future<void> setOnPageFinished(PageEventCallback onPageFinished) async {
@@ -987,6 +1042,13 @@ class WebKitNavigationDelegate extends PlatformNavigationDelegate {
   @override
   Future<void> setOnUrlChange(UrlChangeCallback onUrlChange) async {
     _onUrlChange = onUrlChange;
+  }
+
+  @override
+  Future<void> setOnHttpAuthRequest(
+    HttpAuthRequestCallback onHttpAuthRequest,
+  ) async {
+    _onHttpAuthRequest = onHttpAuthRequest;
   }
 }
 
