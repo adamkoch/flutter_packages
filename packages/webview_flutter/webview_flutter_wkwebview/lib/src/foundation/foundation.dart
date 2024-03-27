@@ -10,7 +10,7 @@ import '../common/weak_reference_utils.dart';
 import 'foundation_api_impls.dart';
 
 export 'foundation_api_impls.dart'
-    show NSUrlSessionAuthChallengeDisposition, NSUrlCredentialPersistence;
+    show NSUrlCredentialPersistence, NSUrlSessionAuthChallengeDisposition;
 
 /// The values that can be returned in a change map.
 ///
@@ -219,6 +219,21 @@ class NSErrorUserInfoKey {
   /// See https://developer.apple.com/documentation/foundation/nsurlerrorfailingurlstringerrorkey?language=objc.
   static const String NSURLErrorFailingURLStringError =
       'NSErrorFailingURLStringKey';
+}
+
+/// The metadata associated with the response to an HTTP protocol URL load
+/// request.
+///
+/// Wraps [NSHttpUrlResponse](https://developer.apple.com/documentation/foundation/nshttpurlresponse?language=objc).
+@immutable
+class NSHttpUrlResponse {
+  /// Constructs an [NSHttpUrlResponse].
+  const NSHttpUrlResponse({
+    required this.statusCode,
+  });
+
+  /// The response’s HTTP status code.
+  final int statusCode;
 }
 
 /// Information about an error condition.
