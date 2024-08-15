@@ -15,6 +15,7 @@ import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
+import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import io.flutter.view.TextureRegistry;
 
@@ -57,6 +58,14 @@ final class VideoPlayer {
     this.videoPlayerEvents = events;
     this.textureEntry = textureEntry;
     this.options = options;
+
+    // Create a DefaultRenderersFactory and enable decoder fallback
+    // https://github.com/google/ExoPlayer/issues/8987#issuecomment-1311420021
+    DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(context)
+        .setEnableDecoderFallback(true);
+    
+    // Set the renderers factory on the builder
+    builder.setRenderersFactory(renderersFactory);
 
     ExoPlayer exoPlayer = builder.build();
     exoPlayer.setMediaItem(mediaItem);
