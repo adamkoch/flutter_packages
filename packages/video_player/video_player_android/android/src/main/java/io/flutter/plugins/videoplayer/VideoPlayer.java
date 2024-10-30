@@ -51,6 +51,15 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
           ExoPlayer.Builder builder =
               new ExoPlayer.Builder(context)
                   .setMediaSourceFactory(asset.getMediaSourceFactory(context));
+
+          // Create a DefaultRenderersFactory and enable decoder fallback
+          // https://github.com/google/ExoPlayer/issues/8987#issuecomment-1311420021
+          DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(context)
+              .setEnableDecoderFallback(true);
+
+          // Set the renderers factory on the builder
+          builder.setRenderersFactory(renderersFactory);
+
           return builder.build();
         },
         events,
@@ -82,14 +91,6 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     this.mediaItem = mediaItem;
     this.options = options;
     this.exoPlayer = createVideoPlayer();
-    // Create a DefaultRenderersFactory and enable decoder fallback
-    // https://github.com/google/ExoPlayer/issues/8987#issuecomment-1311420021
-    DefaultRenderersFactory renderersFactory = new DefaultRenderersFactory(context)
-        .setEnableDecoderFallback(true);
-    
-    // Set the renderers factory on the builder
-    builder.setRenderersFactory(renderersFactory);
-
     surfaceProducer.setCallback(this);
   }
 
