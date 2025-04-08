@@ -137,7 +137,7 @@ class PlatformHeatmap {
   /// internal implementation details of that method.
   // TODO(stuartmorgan): Replace this with structured data. This exists only to
   //  allow incremental migration to Pigeon.
-  final Map<String?, Object?> json;
+  final Map<String, Object?> json;
 }
 
 /// Pigeon equivalent of the ClusterManager class.
@@ -221,8 +221,8 @@ class PlatformPolygon {
   final bool consumesTapEvents;
   final int fillColor;
   final bool geodesic;
-  final List<PlatformLatLng?> points;
-  final List<List<PlatformLatLng?>?> holes;
+  final List<PlatformLatLng> points;
+  final List<List<PlatformLatLng>> holes;
   final bool visible;
   final int strokeColor;
   final int strokeWidth;
@@ -262,8 +262,8 @@ class PlatformPolyline {
   final PlatformJointType jointType;
 
   /// The pattern data, as a list of pattern items.
-  final List<PlatformPatternItem?> patterns;
-  final List<PlatformLatLng?> points;
+  final List<PlatformPatternItem> patterns;
+  final List<PlatformLatLng> points;
 
   /// The cap at the start and end vertex of a polyline.
   /// See https://developers.google.com/maps/documentation/android-sdk/reference/com/google/android/libraries/maps/model/Cap.
@@ -382,10 +382,38 @@ class PlatformCluster {
   final String clusterManagerId;
   final PlatformLatLng position;
   final PlatformLatLngBounds bounds;
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  final List<String?> markerIds;
+  final List<String> markerIds;
+}
+
+/// Pigeon equivalent of the GroundOverlay class.
+class PlatformGroundOverlay {
+  PlatformGroundOverlay({
+    required this.groundOverlayId,
+    required this.image,
+    required this.position,
+    required this.bounds,
+    required this.width,
+    required this.height,
+    required this.anchor,
+    required this.transparency,
+    required this.bearing,
+    required this.zIndex,
+    required this.visible,
+    required this.clickable,
+  });
+
+  final String groundOverlayId;
+  final PlatformBitmap image;
+  final PlatformLatLng? position;
+  final PlatformLatLngBounds? bounds;
+  final double? width;
+  final double? height;
+  final PlatformDoublePair? anchor;
+  final double transparency;
+  final double bearing;
+  final int zIndex;
+  final bool visible;
+  final bool clickable;
 }
 
 /// Pigeon equivalent of CameraTargetBounds.
@@ -410,20 +438,19 @@ class PlatformMapViewCreationParams {
     required this.initialHeatmaps,
     required this.initialTileOverlays,
     required this.initialClusterManagers,
+    required this.initialGroundOverlays,
   });
 
   final PlatformCameraPosition initialCameraPosition;
   final PlatformMapConfiguration mapConfiguration;
-  // TODO(stuartmorgan): Make the generic types non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  final List<PlatformCircle?> initialCircles;
-  final List<PlatformMarker?> initialMarkers;
-  final List<PlatformPolygon?> initialPolygons;
-  final List<PlatformPolyline?> initialPolylines;
-  final List<PlatformHeatmap?> initialHeatmaps;
-  final List<PlatformTileOverlay?> initialTileOverlays;
-  final List<PlatformClusterManager?> initialClusterManagers;
+  final List<PlatformCircle> initialCircles;
+  final List<PlatformMarker> initialMarkers;
+  final List<PlatformPolygon> initialPolygons;
+  final List<PlatformPolyline> initialPolylines;
+  final List<PlatformHeatmap> initialHeatmaps;
+  final List<PlatformTileOverlay> initialTileOverlays;
+  final List<PlatformClusterManager> initialClusterManagers;
+  final List<PlatformGroundOverlay> initialGroundOverlays;
 }
 
 /// Pigeon equivalent of MapConfiguration.
@@ -610,53 +637,36 @@ abstract class MapsApi {
   void updateMapConfiguration(PlatformMapConfiguration configuration);
 
   /// Updates the set of circles on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  void updateCircles(List<PlatformCircle?> toAdd,
-      List<PlatformCircle?> toChange, List<String?> idsToRemove);
+  void updateCircles(List<PlatformCircle> toAdd, List<PlatformCircle> toChange,
+      List<String> idsToRemove);
 
   /// Updates the set of heatmaps on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  void updateHeatmaps(List<PlatformHeatmap?> toAdd,
-      List<PlatformHeatmap?> toChange, List<String?> idsToRemove);
+  void updateHeatmaps(List<PlatformHeatmap> toAdd,
+      List<PlatformHeatmap> toChange, List<String> idsToRemove);
 
   /// Updates the set of custer managers for clusters on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
   void updateClusterManagers(
-      List<PlatformClusterManager?> toAdd, List<String?> idsToRemove);
+      List<PlatformClusterManager> toAdd, List<String> idsToRemove);
 
   /// Updates the set of markers on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  void updateMarkers(List<PlatformMarker?> toAdd,
-      List<PlatformMarker?> toChange, List<String?> idsToRemove);
+  void updateMarkers(List<PlatformMarker> toAdd, List<PlatformMarker> toChange,
+      List<String> idsToRemove);
 
   /// Updates the set of polygonss on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  void updatePolygons(List<PlatformPolygon?> toAdd,
-      List<PlatformPolygon?> toChange, List<String?> idsToRemove);
+  void updatePolygons(List<PlatformPolygon> toAdd,
+      List<PlatformPolygon> toChange, List<String> idsToRemove);
 
   /// Updates the set of polylines on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  void updatePolylines(List<PlatformPolyline?> toAdd,
-      List<PlatformPolyline?> toChange, List<String?> idsToRemove);
+  void updatePolylines(List<PlatformPolyline> toAdd,
+      List<PlatformPolyline> toChange, List<String> idsToRemove);
 
   /// Updates the set of tile overlays on the map.
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  void updateTileOverlays(List<PlatformTileOverlay?> toAdd,
-      List<PlatformTileOverlay?> toChange, List<String?> idsToRemove);
+  void updateTileOverlays(List<PlatformTileOverlay> toAdd,
+      List<PlatformTileOverlay> toChange, List<String> idsToRemove);
+
+  /// Updates the set of ground overlays on the map.
+  void updateGroundOverlays(List<PlatformGroundOverlay> toAdd,
+      List<PlatformGroundOverlay> toChange, List<String> idsToRemove);
 
   /// Gets the screen coordinate for the given map location.
   PlatformPoint getScreenCoordinate(PlatformLatLng latLng);
@@ -671,8 +681,10 @@ abstract class MapsApi {
   /// animation.
   void moveCamera(PlatformCameraUpdate cameraUpdate);
 
-  /// Moves the camera according to [cameraUpdate], animating the update.
-  void animateCamera(PlatformCameraUpdate cameraUpdate);
+  /// Moves the camera according to [cameraUpdate], animating the update using a
+  /// duration in milliseconds if provided.
+  void animateCamera(
+      PlatformCameraUpdate cameraUpdate, int? durationMilliseconds);
 
   /// Gets the current map zoom level.
   double getZoomLevel();
@@ -753,6 +765,9 @@ abstract class MapsCallbackApi {
   /// Called when a polyline is tapped.
   void onPolylineTap(String polylineId);
 
+  /// Called when a ground overlay is tapped.
+  void onGroundOverlayTap(String groundOverlayId);
+
   /// Called to get data for a map tile.
   @async
   PlatformTile getTileOverlayTile(
@@ -797,9 +812,8 @@ abstract class MapsInspectorApi {
   bool isMyLocationButtonEnabled();
   bool isTrafficEnabled();
   PlatformTileLayer? getTileOverlayInfo(String tileOverlayId);
+  PlatformGroundOverlay? getGroundOverlayInfo(String groundOverlayId);
   PlatformZoomRange getZoomRange();
-  // TODO(stuartmorgan): Make the generic type non-nullable once supported.
-  // https://github.com/flutter/flutter/issues/97848
-  // The consuming code treats the entries as non-nullable.
-  List<PlatformCluster?> getClusters(String clusterManagerId);
+  List<PlatformCluster> getClusters(String clusterManagerId);
+  PlatformCameraPosition getCameraPosition();
 }
