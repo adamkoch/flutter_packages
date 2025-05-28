@@ -8,12 +8,14 @@ import static androidx.media3.common.Player.REPEAT_MODE_ALL;
 import static androidx.media3.common.Player.REPEAT_MODE_OFF;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
+import io.flutter.view.TextureRegistry.SurfaceProducer;
 
 /**
  * A class responsible for managing video playback using {@link ExoPlayer}.
@@ -21,10 +23,8 @@ import androidx.media3.exoplayer.ExoPlayer;
  * <p>It provides methods to control playback, adjust volume, and handle seeking.
  */
 public abstract class VideoPlayer {
-  @NonNull private final ExoPlayerProvider exoPlayerProvider;
-  @NonNull private final MediaItem mediaItem;
-  @NonNull private final VideoPlayerOptions options;
   @NonNull protected final VideoPlayerCallbacks videoPlayerEvents;
+  @Nullable protected final SurfaceProducer surfaceProducer;
   @NonNull protected ExoPlayer exoPlayer;
   @Nullable private ExoPlayerState savedStateDuring;
 
@@ -82,29 +82,20 @@ public abstract class VideoPlayer {
       @NonNull VideoPlayerCallbacks events,
       @NonNull MediaItem mediaItem,
       @NonNull VideoPlayerOptions options,
+      @Nullable SurfaceProducer surfaceProducer,
       @NonNull ExoPlayerProvider exoPlayerProvider) {
     this.videoPlayerEvents = events;
-    this.mediaItem = mediaItem;
-    this.options = options;
-    this.exoPlayerProvider = exoPlayerProvider;
-    this.exoPlayer = createVideoPlayer();
-  }
-
-  @NonNull
-  protected ExoPlayer createVideoPlayer() {
-    ExoPlayer exoPlayer = exoPlayerProvider.get();
+    this.surfaceProducer = surfaceProducer;
+    exoPlayer = exoPlayerProvider.get();
     exoPlayer.setMediaItem(mediaItem);
     exoPlayer.prepare();
-
-    exoPlayer.addListener(createExoPlayerEventListener(exoPlayer));
+    exoPlayer.addListener(createExoPlayerEventListener(exoPlayer, surfaceProducer));
     setAudioAttributes(exoPlayer, options.mixWithOthers);
-
-    return exoPlayer;
   }
 
   @NonNull
   protected abstract ExoPlayerEventListener createExoPlayerEventListener(
-      @NonNull ExoPlayer exoPlayer);
+      @NonNull ExoPlayer exoPlayer, @Nullable SurfaceProducer surfaceProducer);
 
   void sendBufferingUpdate() {
     videoPlayerEvents.onBufferingUpdate(exoPlayer.getBufferedPosition());

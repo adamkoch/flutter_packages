@@ -7,6 +7,11 @@ import XCTest
 
 @testable import camera_avfoundation
 
+// Import Objectice-C part of the implementation when SwiftPM is used.
+#if canImport(camera_avfoundation_objc)
+  @testable import camera_avfoundation_objc
+#endif
+
 private class MockImageStreamHandler: FLTImageStreamHandler {
   var eventSinkStub: ((Any?) -> Void)?
 
@@ -32,7 +37,7 @@ final class StreamingTests: XCTestCase {
     let configuration = CameraTestUtils.createTestCameraConfiguration()
     configuration.captureSessionQueue = captureSessionQueue
 
-    let camera = FLTCam(configuration: configuration, error: nil)
+    let camera = CameraTestUtils.createTestCamera(configuration)
     let sampleBuffer = CameraTestUtils.createTestSampleBuffer()
 
     return (camera, sampleBuffer)
@@ -49,10 +54,8 @@ final class StreamingTests: XCTestCase {
     let messenger = MockFlutterBinaryMessenger()
     camera.startImageStream(with: messenger, imageStreamHandler: handlerMock)
 
-    let expectation = XCTKVOExpectation(
-      keyPath: "isStreamingImages", object: camera, expectedValue: true)
-    let result = XCTWaiter.wait(for: [expectation], timeout: 1)
-    XCTAssertEqual(result, .completed)
+    waitForQueueRoundTrip(with: DispatchQueue.main)
+    XCTAssertEqual(camera.isStreamingImages, true)
 
     streamingExpectation.expectedFulfillmentCount = 4
     for _ in 0..<10 {
@@ -73,10 +76,8 @@ final class StreamingTests: XCTestCase {
     let messenger = MockFlutterBinaryMessenger()
     camera.startImageStream(with: messenger, imageStreamHandler: handlerMock)
 
-    let expectation = XCTKVOExpectation(
-      keyPath: "isStreamingImages", object: camera, expectedValue: true)
-    let result = XCTWaiter.wait(for: [expectation], timeout: 1)
-    XCTAssertEqual(result, .completed)
+    waitForQueueRoundTrip(with: DispatchQueue.main)
+    XCTAssertEqual(camera.isStreamingImages, true)
 
     streamingExpectation.expectedFulfillmentCount = 5
     for _ in 0..<10 {

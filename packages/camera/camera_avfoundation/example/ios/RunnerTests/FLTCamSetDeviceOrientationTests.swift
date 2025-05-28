@@ -7,10 +7,14 @@ import XCTest
 
 @testable import camera_avfoundation
 
+// Import Objectice-C part of the implementation when SwiftPM is used.
+#if canImport(camera_avfoundation_objc)
+  @testable import camera_avfoundation_objc
+#endif
+
 final class FLTCamSetDeviceOrientationTests: XCTestCase {
   private func createCamera() -> (FLTCam, MockCaptureConnection, MockCaptureConnection) {
-    let configuration = CameraTestUtils.createTestCameraConfiguration()
-    let camera = FLTCam(configuration: configuration, error: nil)
+    let camera = CameraTestUtils.createTestCamera()
 
     let mockCapturePhotoOutput = MockCapturePhotoOutput()
     let mockPhotoCaptureConnection = MockCaptureConnection()
